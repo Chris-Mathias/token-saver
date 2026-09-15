@@ -824,7 +824,7 @@ def test_paired_truncate_cuts_to_approximately_target_budget():
 
 def test_paired_truncate_preserves_prefix_content():
     text = "FIRST_MARKER " + ("filler " * 300) + "LAST_MARKER"
-    result = paired_truncate(text, target_tokens=5)
+    result = paired_truncate(text, target_tokens=20)
     assert "FIRST_MARKER" in result
     assert "LAST_MARKER" not in result
 ```
