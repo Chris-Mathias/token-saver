@@ -1129,14 +1129,18 @@ def process_event(payload: dict, data_path: Path) -> None:
     try:
         raw_tokens = count_tokens(raw_output)
         s2b_tokens = count_tokens(s2b_output)
+        s2a_output = paired_truncate(raw_output, target_tokens=s2b_tokens) if s2b_output else ""
+        s2a_tokens = count_tokens(s2a_output) if s2a_output else 0
         approx_fallback = False
     except Exception:
+        # paired_truncate also calls the tokenizer internally (encode/decode), so it
+        # must share this try/except rather than run after it — otherwise a tokenizer
+        # failure here would propagate uncaught and violate "never crash the real session".
         raw_tokens = len(raw_output) // 4
         s2b_tokens = len(s2b_output) // 4
+        s2a_output = ""
+        s2a_tokens = 0
         approx_fallback = True
-
-    s2a_output = paired_truncate(raw_output, target_tokens=s2b_tokens) if s2b_output else ""
-    s2a_tokens = count_tokens(s2a_output) if s2a_output else 0
 
     event = EventRecord(
         timestamp=datetime.now(timezone.utc).isoformat(),
