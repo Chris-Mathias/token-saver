@@ -66,3 +66,22 @@ def test_process_event_logs_extractor_error_without_raising(tmp_path, monkeypatc
     record = json.loads(data_path.read_text().splitlines()[0])
     assert record["extractor_error"] == "parse failed"
     assert record["s2b_output"] == ""
+
+
+def test_process_event_tokenizer_failure_falls_back_without_raising(tmp_path, monkeypatch):
+    data_path = tmp_path / "events.jsonl"
+
+    def _raise(*args, **kwargs):
+        raise RuntimeError("tokenizer unavailable")
+
+    monkeypatch.setattr("hooks.post_tool_use.count_tokens", _raise)
+    payload = {
+        "tool_name": "Bash",
+        "tool_input": {"command": "git diff"},
+        "tool_response": "diff --git a/x.py b/x.py\n--- a/x.py\n+++ b/x.py\n@@ -1 +1 @@\n-old\n+new\n",
+    }
+    process_event(payload, data_path)
+    record = json.loads(data_path.read_text().splitlines()[0])
+    assert record["approx_fallback"] is True
+    assert record["s2a_output"] == ""
+    assert record["s2a_tokens"] == 0
