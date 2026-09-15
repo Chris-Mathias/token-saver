@@ -1,0 +1,14 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.6, pytest-8.1.1, pluggy-1.4.0
+rootdir: /home/user/project
+collected 0 items / 1 error
+
+=================================== ERRORS ====================================
+_________________________ ERROR collecting tests/test_broken.py _________________________
+ImportError while importing test module 'tests/test_broken.py'.
+tests/test_broken.py:1: in <module>
+    import nonexistent_module
+E   ModuleNotFoundError: No module named 'nonexistent_module'
+=========================== short test summary info ============================
+ERROR tests/test_broken.py
+=============================== 1 error in 0.03s ===============================

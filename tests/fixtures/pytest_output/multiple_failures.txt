@@ -1,0 +1,26 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.6, pytest-8.1.1, pluggy-1.4.0
+rootdir: /home/user/project
+collected 4 items
+
+tests/test_math.py .FF.                                                     [100%]
+
+=================================== FAILURES ===================================
+_________________________________ test_add_wrong _________________________________
+
+    def test_add_wrong():
+>       assert 1 + 1 == 3
+E       assert 2 == 3
+
+tests/test_math.py:5: AssertionError
+_________________________________ test_sub_wrong _________________________________
+
+    def test_sub_wrong():
+>       assert 5 - 2 == 10
+E       assert 3 == 10
+
+tests/test_math.py:9: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_math.py::test_add_wrong - assert 2 == 3
+FAILED tests/test_math.py::test_sub_wrong - assert 3 == 10
+======================= 2 failed, 2 passed in 0.06s ========================
