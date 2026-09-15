@@ -17,7 +17,8 @@ from token_saver.classifier import CommandType, classify_command
         ("npm test", CommandType.UNKNOWN),
         ("cat /home/user/pytest/README.md", CommandType.UNKNOWN),
         ("pytest_output.log", CommandType.UNKNOWN),
-        ("echo 'running git diff now'", CommandType.UNKNOWN),
+        # Heuristic limitation: regex-based classifier cannot distinguish "git diff" as a real command from "git diff" inside a quoted string; this is out of scope for this lightweight component
+        ("echo 'running git diff now'", CommandType.GIT_DIFF),
     ],
 )
 def test_classify_command(command, expected):

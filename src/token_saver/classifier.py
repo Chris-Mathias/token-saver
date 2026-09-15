@@ -8,8 +8,8 @@ class CommandType(Enum):
     UNKNOWN = "unknown"
 
 
-_TEST_RUNNER_RE = re.compile(r"(?:^|[;&|]|&&|\|\||\s+)(?:python3?\s+-m\s+)?pytest(?:\s|$)")
-_GIT_DIFF_RE = re.compile(r"(?:^|[;&|]|&&|\|\|)(?:\s+)?git\s+diff(?:\s|$)")
+_TEST_RUNNER_RE = re.compile(r"(?:^|[\s;&|])(?:python3?\s+-m\s+)?pytest(?:\s|$)")
+_GIT_DIFF_RE = re.compile(r"(?:^|[\s;&|])git\s+diff(?:\s|$)")
 
 
 def classify_command(command: str) -> CommandType:
