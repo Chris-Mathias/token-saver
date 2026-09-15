@@ -1,0 +1,12 @@
+diff --git a/utils.py b/utils.py
+index 3333333..4444444 100644
+--- a/utils.py
++++ b/utils.py
+@@ -2,3 +2,3 @@
+ def helper_one():
+-    return 1
++    return 2
+@@ -10,3 +10,3 @@
+ def helper_two():
+-    return 10
++    return 20
