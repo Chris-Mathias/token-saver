@@ -87,7 +87,12 @@ def main() -> int:
         payload = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
         return 0
-    process_event(payload, DATA_PATH)
+
+    try:
+        process_event(payload, DATA_PATH)
+    except Exception:
+        pass
+
     return 0
 
 

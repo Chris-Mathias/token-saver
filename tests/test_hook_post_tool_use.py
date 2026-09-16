@@ -1,6 +1,7 @@
+import io
 import json
 
-from hooks.post_tool_use import process_event
+from hooks.post_tool_use import main, process_event
 
 
 def test_process_event_logs_pytest_event(tmp_path):
@@ -85,3 +86,10 @@ def test_process_event_tokenizer_failure_falls_back_without_raising(tmp_path, mo
     assert record["approx_fallback"] is True
     assert record["s2a_output"] == ""
     assert record["s2a_tokens"] == 0
+
+
+def test_main_returns_0_even_when_process_event_raises(monkeypatch):
+    payload = {"tool_name": "Bash", "tool_input": "not a dict", "tool_response": {}}
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(payload)))
+    result = main()
+    assert result == 0
