@@ -1,3 +1,5 @@
+import pytest
+
 from token_saver.tokenizer import count_tokens
 from token_saver.truncate import paired_truncate
 
@@ -19,3 +21,10 @@ def test_paired_truncate_preserves_prefix_content():
     result = paired_truncate(text, target_tokens=20)
     assert "FIRST_MARKER" in result
     assert "LAST_MARKER" not in result
+
+
+@pytest.mark.parametrize("target_tokens", [0, 1, 3, 6, 14, 20, 50])
+def test_paired_truncate_never_exceeds_target_budget(target_tokens):
+    text = "word " * 500
+    result = paired_truncate(text, target_tokens=target_tokens)
+    assert count_tokens(result) <= target_tokens
