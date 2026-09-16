@@ -42,11 +42,16 @@ def process_event(payload: dict, data_path: Path) -> None:
 
     extractor_error = None
     s2b_output = ""
+    s2b_metadata: dict = {}
     try:
         if command_type is CommandType.TEST_RUNNER:
-            s2b_output = extract_pytest(raw_output).text
+            extraction = extract_pytest(raw_output)
+            s2b_output = extraction.text
+            s2b_metadata = extraction.metadata
         elif command_type is CommandType.GIT_DIFF:
-            s2b_output = extract_git_diff(raw_output).text
+            extraction = extract_git_diff(raw_output)
+            s2b_output = extraction.text
+            s2b_metadata = extraction.metadata
     except Exception as exc:  # extractor must never crash the real session
         extractor_error = str(exc)
 
@@ -76,6 +81,7 @@ def process_event(payload: dict, data_path: Path) -> None:
         s2a_tokens=s2a_tokens,
         s2b_output=s2b_output,
         s2b_tokens=s2b_tokens,
+        s2b_metadata=s2b_metadata,
         extractor_error=extractor_error,
         approx_fallback=approx_fallback,
     )

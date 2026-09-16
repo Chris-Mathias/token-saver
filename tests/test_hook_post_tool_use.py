@@ -18,6 +18,7 @@ def test_process_event_logs_pytest_event(tmp_path):
     assert record["command_type"] == "test_runner"
     assert record["s2b_tokens"] > 0
     assert record["extractor_error"] is None
+    assert record["s2b_metadata"]["counts"] == {"passed": 2}
 
 
 def test_process_event_ignores_non_bash_tool(tmp_path):
@@ -49,6 +50,7 @@ def test_process_event_logs_git_diff_event_with_string_tool_response(tmp_path):
     record = json.loads(data_path.read_text().splitlines()[0])
     assert record["command_type"] == "git_diff"
     assert "new" in record["s2b_output"]
+    assert record["s2b_metadata"]["hunks"] == 1
 
 
 def test_process_event_logs_extractor_error_without_raising(tmp_path, monkeypatch):
