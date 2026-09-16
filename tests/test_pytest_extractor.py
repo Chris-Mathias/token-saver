@@ -41,3 +41,21 @@ def test_extract_pytest_collection_error():
     assert "ModuleNotFoundError" in result.text
     assert "nonexistent_module" in result.text
     assert "short test summary info" not in result.text
+
+
+def test_extract_pytest_handles_long_duration_suffix():
+    raw = (FIXTURES_DIR / "pytest_output" / "long_duration.txt").read_text()
+    result = extract_pytest(raw)
+    assert result.metadata["parsed"] is True
+    assert result.metadata["counts"] == {"failed": 1, "passed": 2}
+    assert "test_slow_fail" in result.text
+
+
+def test_extract_pytest_failures_and_errors_together():
+    raw = (FIXTURES_DIR / "pytest_output" / "failures_and_errors.txt").read_text()
+    result = extract_pytest(raw)
+    assert result.metadata["counts"] == {"failed": 1, "passed": 1, "error": 1}
+    assert "ModuleNotFoundError" in result.text
+    assert "nonexistent_module" in result.text
+    assert "test_add_wrong" in result.text
+    assert "tests/test_math.py:5: AssertionError" in result.text

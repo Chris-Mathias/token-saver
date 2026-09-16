@@ -1,0 +1,18 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.6, pytest-8.1.1, pluggy-1.4.0
+rootdir: /home/user/project
+collected 3 items
+
+tests/test_slow.py .F.                                                     [100%]
+
+=================================== FAILURES ===================================
+_________________________________ test_slow_fail _________________________________
+
+    def test_slow_fail():
+>       assert 1 + 1 == 3
+E       assert 2 == 3
+
+tests/test_slow.py:5: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_slow.py::test_slow_fail - assert 2 == 3
+================= 1 failed, 2 passed in 65.43s (0:01:05) =================
