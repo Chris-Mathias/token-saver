@@ -3,6 +3,11 @@ import re
 from token_saver.extractors import ExtractionResult
 
 _HUNK_HEADER_RE = re.compile(r"^@@ .+ @@.*$")
+_FILE_HEADER_RE = re.compile(r"^diff --git ")
+_INDEX_RE = re.compile(r"^index [0-9a-f]+\.\.[0-9a-f]+")
+# A marker costs ~11 tokens and a context line ~8, so collapsing fewer than two
+# lines would make the output larger, not smaller.
+_MIN_OMITTED_LINES = 2
 
 
 def _collapse_context_runs(
@@ -19,8 +24,8 @@ def _collapse_context_runs(
             while j < n and body_lines[j].startswith(" "):
                 j += 1
             run = body_lines[i:j]
-            if len(run) > 2 * context_lines:
-                omitted = len(run) - 2 * context_lines
+            omitted = len(run) - 2 * context_lines
+            if omitted >= _MIN_OMITTED_LINES:
                 result.extend(run[:context_lines])
                 result.append(f"... {omitted} linhas inalteradas omitidas ...")
                 result.extend(run[-context_lines:] if context_lines else [])
@@ -34,8 +39,41 @@ def _collapse_context_runs(
     return result, collapses
 
 
-def extract_git_diff(raw_output: str, context_lines: int = 1) -> ExtractionResult:
-    lines = raw_output.splitlines()
+def _file_header_names_file(header: list[str]) -> bool:
+    return any(
+        line.startswith(("+++ ", "Binary files ", "rename to ")) for line in header
+    )
+
+
+def _drop_redundant_header_lines(lines: list[str]) -> tuple[list[str], int]:
+    # `diff --git` repeats the paths already in `---`/`+++`, and `index` only
+    # carries blob hashes; both go, unless `diff --git` is the only line naming
+    # the file (e.g. a mode-only change).
+    result: list[str] = []
+    removed = 0
+    in_header = False
+    for i, line in enumerate(lines):
+        if _FILE_HEADER_RE.match(line):
+            in_header = True
+            header_end = next(
+                (k for k in range(i + 1, len(lines))
+                 if _HUNK_HEADER_RE.match(lines[k]) or _FILE_HEADER_RE.match(lines[k])),
+                len(lines),
+            )
+            if _file_header_names_file(lines[i + 1:header_end]):
+                removed += 1
+                continue
+        elif _HUNK_HEADER_RE.match(line):
+            in_header = False
+        elif in_header and _INDEX_RE.match(line):
+            removed += 1
+            continue
+        result.append(line)
+    return result, removed
+
+
+def extract_git_diff(raw_output: str, context_lines: int = 0) -> ExtractionResult:
+    lines, header_lines_removed = _drop_redundant_header_lines(raw_output.splitlines())
     output_lines: list[str] = []
     current_hunk_body: list[str] = []
     in_hunk = False
@@ -67,5 +105,9 @@ def extract_git_diff(raw_output: str, context_lines: int = 1) -> ExtractionResul
 
     return ExtractionResult(
         text="\n".join(output_lines),
-        metadata={"hunks": hunk_count, "context_blocks_collapsed": total_collapses},
+        metadata={
+            "hunks": hunk_count,
+            "context_blocks_collapsed": total_collapses,
+            "header_lines_removed": header_lines_removed,
+        },
     )
