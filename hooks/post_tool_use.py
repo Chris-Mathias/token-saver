@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,6 +13,7 @@ from token_saver.tokenizer import count_tokens
 from token_saver.truncate import paired_truncate
 
 DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "events.jsonl"
+_EXIT_CODE_RE = re.compile(r"^Exit code (\d+)\n?")
 
 
 def _extract_output_text(tool_response) -> str:
@@ -23,6 +25,15 @@ def _extract_output_text(tool_response) -> str:
         parts = [tool_response.get("stdout", ""), tool_response.get("stderr", "")]
         return "\n".join(p for p in parts if p)
     return ""
+
+
+def _split_failure_error(error: str) -> tuple[str, int | None]:
+    # PostToolUseFailure puts the output in `error`, prefixed by an "Exit code N"
+    # line; without that line the shell never ran and there is no exit code.
+    match = _EXIT_CODE_RE.match(error)
+    if not match:
+        return error, None
+    return error[match.end():], int(match.group(1))
 
 
 def process_event(payload: dict, data_path: Path) -> None:
@@ -38,7 +49,11 @@ def process_event(payload: dict, data_path: Path) -> None:
     if command_type is CommandType.UNKNOWN:
         return
 
-    raw_output = _extract_output_text(payload.get("tool_response"))
+    if payload.get("hook_event_name") == "PostToolUseFailure":
+        raw_output, exit_code = _split_failure_error(payload.get("error") or "")
+    else:
+        raw_output = _extract_output_text(payload.get("tool_response"))
+        exit_code = 0
 
     extractor_error = None
     s2b_output = ""
@@ -84,6 +99,7 @@ def process_event(payload: dict, data_path: Path) -> None:
         s2b_metadata=s2b_metadata,
         extractor_error=extractor_error,
         approx_fallback=approx_fallback,
+        exit_code=exit_code,
     )
     log_event(event, data_path)
 

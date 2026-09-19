@@ -1,7 +1,10 @@
 import io
 import json
+from pathlib import Path
 
 from hooks.post_tool_use import main, process_event
+
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 
 def test_process_event_logs_pytest_event(tmp_path):
@@ -95,3 +98,48 @@ def test_main_returns_0_even_when_process_event_raises(monkeypatch):
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(payload)))
     result = main()
     assert result == 0
+
+
+def test_process_event_logs_failed_pytest_from_post_tool_use_failure(tmp_path):
+    data_path = tmp_path / "events.jsonl"
+    output = (FIXTURES_DIR / "pytest_output" / "with_failures.txt").read_text()
+    payload = {
+        "hook_event_name": "PostToolUseFailure",
+        "tool_name": "Bash",
+        "tool_input": {"command": "pytest tests/"},
+        "error": f"Exit code 1\n{output}",
+        "is_interrupt": False,
+    }
+    process_event(payload, data_path)
+    record = json.loads(data_path.read_text().splitlines()[0])
+    assert not record["raw_output"].startswith("Exit code")
+    assert record["exit_code"] == 1
+    assert record["s2b_metadata"]["counts"] == {"failed": 1, "passed": 2}
+    assert "tests/test_math.py:5: AssertionError" in record["s2b_output"]
+
+
+def test_process_event_failure_without_exit_code_line(tmp_path):
+    data_path = tmp_path / "events.jsonl"
+    payload = {
+        "hook_event_name": "PostToolUseFailure",
+        "tool_name": "Bash",
+        "tool_input": {"command": "pytest"},
+        "error": "spawn /bin/zsh ENOENT",
+    }
+    process_event(payload, data_path)
+    record = json.loads(data_path.read_text().splitlines()[0])
+    assert record["exit_code"] is None
+    assert record["raw_output"] == "spawn /bin/zsh ENOENT"
+
+
+def test_process_event_successful_call_records_exit_code_zero(tmp_path):
+    data_path = tmp_path / "events.jsonl"
+    payload = {
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Bash",
+        "tool_input": {"command": "pytest"},
+        "tool_response": {"stdout": "===== 2 passed in 0.01s =====", "stderr": ""},
+    }
+    process_event(payload, data_path)
+    record = json.loads(data_path.read_text().splitlines()[0])
+    assert record["exit_code"] == 0

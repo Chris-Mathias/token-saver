@@ -18,6 +18,7 @@ class EventRecord:
     s2b_metadata: dict[str, Any] = field(default_factory=dict)
     extractor_error: str | None = None
     approx_fallback: bool = False
+    exit_code: int | None = None
 
 
 def log_event(event: EventRecord, path: Path) -> None:
