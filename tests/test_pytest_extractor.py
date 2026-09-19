@@ -59,3 +59,21 @@ def test_extract_pytest_failures_and_errors_together():
     assert "nonexistent_module" in result.text
     assert "test_add_wrong" in result.text
     assert "tests/test_math.py:5: AssertionError" in result.text
+
+
+def test_extract_pytest_quiet_all_passed():
+    raw = (FIXTURES_DIR / "pytest_output" / "quiet_all_passed.txt").read_text()
+    result = extract_pytest(raw)
+    assert result.metadata["parsed"] is True
+    assert result.metadata["counts"] == {"passed": 2}
+    assert result.text == "Resumo: 2 passed"
+
+
+def test_extract_pytest_quiet_with_failures():
+    raw = (FIXTURES_DIR / "pytest_output" / "quiet_with_failures.txt").read_text()
+    result = extract_pytest(raw)
+    assert result.metadata["parsed"] is True
+    assert result.metadata["counts"] == {"failed": 1, "passed": 4}
+    assert "test_add_wrong" in result.text
+    assert "tests/test_math.py:5: AssertionError" in result.text
+    assert "short test summary info" not in result.text

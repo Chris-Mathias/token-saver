@@ -3,13 +3,20 @@ import re
 from token_saver.extractors import ExtractionResult
 
 _SUMMARY_RE = re.compile(r"^=+ (.+) in [\d.]+s(?: \(\d+:\d{2}:\d{2}\))? ?=*$", re.MULTILINE)
+# `pytest -q` prints the summary without the `=` banner; requiring the line to
+# start with "<n> <word>" keeps unrelated "... in 1.2s" lines from matching.
+_QUIET_SUMMARY_RE = re.compile(
+    r"^(\d+ \w+(?:, \d+ \w+)*) in [\d.]+s(?: \(\d+:\d{2}:\d{2}\))?$", re.MULTILINE
+)
 _ISSUES_HEADER_RE = re.compile(r"^=+ (?:FAILURES|ERRORS) =+$", re.MULTILINE)
 _SECTION_HEADER_RE = re.compile(r"^=+ .+ =+$", re.MULTILINE)
 _COUNT_RE = re.compile(r"(\d+) (\w+)")
 
 
 def extract_pytest(raw_output: str) -> ExtractionResult:
-    summary_matches = list(_SUMMARY_RE.finditer(raw_output))
+    summary_matches = list(_SUMMARY_RE.finditer(raw_output)) or list(
+        _QUIET_SUMMARY_RE.finditer(raw_output)
+    )
     if not summary_matches:
         return ExtractionResult(text=raw_output.strip(), metadata={"parsed": False})
 
