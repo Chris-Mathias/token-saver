@@ -143,3 +143,19 @@ def test_process_event_successful_call_records_exit_code_zero(tmp_path):
     process_event(payload, data_path)
     record = json.loads(data_path.read_text().splitlines()[0])
     assert record["exit_code"] == 0
+
+
+def test_process_event_logs_jest_event(tmp_path):
+    data_path = tmp_path / "events.jsonl"
+    output = (FIXTURES_DIR / "jest_output" / "with_failures.txt").read_text()
+    payload = {
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Bash",
+        "tool_input": {"command": "npx jest 2>&1 | tail -80"},
+        "tool_response": {"stdout": output, "stderr": ""},
+    }
+    process_event(payload, data_path)
+    record = json.loads(data_path.read_text().splitlines()[0])
+    assert record["command_type"] == "jest"
+    assert record["s2b_metadata"]["counts"] == {"failed": 2, "passed": 1, "total": 3}
+    assert record["s2b_tokens"] < record["raw_tokens"]

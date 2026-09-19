@@ -7,6 +7,7 @@ from pathlib import Path
 
 from token_saver.classifier import CommandType, classify_command
 from token_saver.extractors.git_diff_extractor import extract_git_diff
+from token_saver.extractors.jest_extractor import extract_jest
 from token_saver.extractors.pytest_extractor import extract_pytest
 from token_saver.logger import EventRecord, log_event
 from token_saver.tokenizer import count_tokens
@@ -65,6 +66,10 @@ def process_event(payload: dict, data_path: Path) -> None:
             s2b_metadata = extraction.metadata
         elif command_type is CommandType.GIT_DIFF:
             extraction = extract_git_diff(raw_output)
+            s2b_output = extraction.text
+            s2b_metadata = extraction.metadata
+        elif command_type is CommandType.JEST:
+            extraction = extract_jest(raw_output)
             s2b_output = extraction.text
             s2b_metadata = extraction.metadata
     except Exception as exc:  # extractor must never crash the real session

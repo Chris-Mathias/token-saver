@@ -1,0 +1,111 @@
+FAIL many/zcart.test.js
+  ● cart › applies discount
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 9
+    Received: 10
+
+      3 |   test('sums prices', () => { expect(total([{ price: 2 }, { price: 3 }])).toBe(5); });
+      4 |   test('applies discount', () => {
+    > 5 |     expect(total([{ price: 10 }])).toBe(9);
+        |                                    ^
+      6 |   });
+      7 |   test('returns object', () => {
+      8 |     expect({ items: 1, total: 10 }).toEqual({ items: 1, total: 12 });
+
+      at Object.toBe (many/zcart.test.js:5:36)
+
+  ● cart › returns object
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "items": 1,
+    -   "total": 12,
+    +   "total": 10,
+      }
+
+       6 |   });
+       7 |   test('returns object', () => {
+    >  8 |     expect({ items: 1, total: 10 }).toEqual({ items: 1, total: 12 });
+         |                                     ^
+       9 |   });
+      10 | });
+      11 |
+
+      at Object.toEqual (many/zcart.test.js:8:37)
+
+PASS many/s18.test.js
+PASS many/s21.test.js
+PASS many/s19.test.js
+PASS many/s17.test.js
+PASS many/s14.test.js
+PASS many/s20.test.js
+PASS many/s9.test.js
+PASS many/s10.test.js
+PASS many/s7.test.js
+PASS many/s5.test.js
+PASS many/s15.test.js
+PASS many/s12.test.js
+PASS many/s6.test.js
+PASS many/s11.test.js
+PASS many/s13.test.js
+PASS many/s3.test.js
+PASS many/s4.test.js
+PASS many/s1.test.js
+PASS many/s2.test.js
+PASS many/s16.test.js
+PASS many/s8.test.js
+
+Summary of all failing tests
+FAIL many/zcart.test.js
+  ● cart › applies discount
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 9
+    Received: 10
+
+      3 |   test('sums prices', () => { expect(total([{ price: 2 }, { price: 3 }])).toBe(5); });
+      4 |   test('applies discount', () => {
+    > 5 |     expect(total([{ price: 10 }])).toBe(9);
+        |                                    ^
+      6 |   });
+      7 |   test('returns object', () => {
+      8 |     expect({ items: 1, total: 10 }).toEqual({ items: 1, total: 12 });
+
+      at Object.toBe (many/zcart.test.js:5:36)
+
+  ● cart › returns object
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "items": 1,
+    -   "total": 12,
+    +   "total": 10,
+      }
+
+       6 |   });
+       7 |   test('returns object', () => {
+    >  8 |     expect({ items: 1, total: 10 }).toEqual({ items: 1, total: 12 });
+         |                                     ^
+       9 |   });
+      10 | });
+      11 |
+
+      at Object.toEqual (many/zcart.test.js:8:37)
+
+
+Test Suites: 1 failed, 21 passed, 22 total
+Tests:       2 failed, 22 passed, 24 total
+Snapshots:   0 total
+Time:        0.726 s
+Ran all test suites matching /many\//i.

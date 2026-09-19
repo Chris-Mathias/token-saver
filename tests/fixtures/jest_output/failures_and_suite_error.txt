@@ -1,0 +1,61 @@
+FAIL fail/cart.test.js
+  ● cart › applies discount
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 9
+    Received: 10
+
+      3 |   test('sums prices', () => { expect(total([{ price: 2 }, { price: 3 }])).toBe(5); });
+      4 |   test('applies discount', () => {
+    > 5 |     expect(total([{ price: 10 }])).toBe(9);
+        |                                    ^
+      6 |   });
+      7 |   test('returns object', () => {
+      8 |     expect({ items: 1, total: 10 }).toEqual({ items: 1, total: 12 });
+
+      at Object.toBe (fail/cart.test.js:5:36)
+
+  ● cart › returns object
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "items": 1,
+    -   "total": 12,
+    +   "total": 10,
+      }
+
+       6 |   });
+       7 |   test('returns object', () => {
+    >  8 |     expect({ items: 1, total: 10 }).toEqual({ items: 1, total: 12 });
+         |                                     ^
+       9 |   });
+      10 | });
+      11 |
+
+      at Object.toEqual (fail/cart.test.js:8:37)
+
+PASS ok/str.test.js
+PASS ok/math.test.js
+FAIL fail/broken.test.js
+  ● Test suite failed to run
+
+    Cannot find module './does-not-exist' from 'fail/broken.test.js'
+
+    > 1 | const missing = require('./does-not-exist');
+        |                                            ^
+      2 | test('never runs', () => { expect(missing).toBeDefined(); });
+      3 |
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (fail/broken.test.js:1:44)
+
+Test Suites: 2 failed, 2 passed, 4 total
+Tests:       2 failed, 4 passed, 6 total
+Snapshots:   0 total
+Time:        0.218 s, estimated 1 s
+Ran all test suites.
