@@ -6,8 +6,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from token_saver.classifier import CommandType, classify_command
+from token_saver.extractors import ExtractionResult
+from token_saver.extractors.django_test_extractor import extract_django_test
 from token_saver.extractors.git_diff_extractor import extract_git_diff
 from token_saver.extractors.jest_extractor import extract_jest
+from token_saver.extractors.vitest_extractor import extract_vitest
 from token_saver.extractors.pytest_extractor import extract_pytest
 from token_saver.logger import EventRecord, log_event
 from token_saver.tokenizer import count_tokens
@@ -37,6 +40,32 @@ def _split_failure_error(error: str) -> tuple[str, int | None]:
     return error[match.end():], int(match.group(1))
 
 
+def _extract_node_test(raw_output: str) -> ExtractionResult:
+    # `npm test` runs whatever the project configured, so the runner is
+    # identified by which extractor recognizes the output.
+    for runner, extract in (("vitest", extract_vitest), ("jest", extract_jest)):
+        extraction = extract(raw_output)
+        if extraction.metadata.get("parsed"):
+            extraction.metadata["runner"] = runner
+            return extraction
+    return ExtractionResult(
+        text=raw_output.strip(), metadata={"parsed": False, "runner": None}
+    )
+
+
+def _extract(command_type: CommandType, raw_output: str) -> ExtractionResult:
+    # Resolved per call so the extractors stay replaceable (tests patch them).
+    extractors = {
+        CommandType.TEST_RUNNER: extract_pytest,
+        CommandType.GIT_DIFF: extract_git_diff,
+        CommandType.JEST: extract_jest,
+        CommandType.VITEST: extract_vitest,
+        CommandType.DJANGO_TEST: extract_django_test,
+        CommandType.NODE_TEST: _extract_node_test,
+    }
+    return extractors[command_type](raw_output)
+
+
 def process_event(payload: dict, data_path: Path) -> None:
     if payload.get("tool_name") != "Bash":
         return
@@ -60,18 +89,9 @@ def process_event(payload: dict, data_path: Path) -> None:
     s2b_output = ""
     s2b_metadata: dict = {}
     try:
-        if command_type is CommandType.TEST_RUNNER:
-            extraction = extract_pytest(raw_output)
-            s2b_output = extraction.text
-            s2b_metadata = extraction.metadata
-        elif command_type is CommandType.GIT_DIFF:
-            extraction = extract_git_diff(raw_output)
-            s2b_output = extraction.text
-            s2b_metadata = extraction.metadata
-        elif command_type is CommandType.JEST:
-            extraction = extract_jest(raw_output)
-            s2b_output = extraction.text
-            s2b_metadata = extraction.metadata
+        extraction = _extract(command_type, raw_output)
+        s2b_output = extraction.text
+        s2b_metadata = extraction.metadata
     except Exception as exc:  # extractor must never crash the real session
         extractor_error = str(exc)
 

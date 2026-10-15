@@ -192,3 +192,64 @@ def test_process_event_without_session_context_keeps_fields_empty(tmp_path):
     record = json.loads(data_path.read_text().splitlines()[0])
     assert record["session_id"] is None
     assert record["tool_use_id"] is None
+
+
+def test_process_event_logs_django_test_event(tmp_path):
+    data_path = tmp_path / "events.jsonl"
+    output = (FIXTURES_DIR / "django_test_output" / "with_failures.txt").read_text()
+    payload = {
+        "hook_event_name": "PostToolUseFailure",
+        "tool_name": "Bash",
+        "tool_input": {"command": "python manage.py test"},
+        "error": f"Exit code 1\n{output}",
+    }
+    process_event(payload, data_path)
+    record = json.loads(data_path.read_text().splitlines()[0])
+    assert record["command_type"] == "django_test"
+    assert record["s2b_metadata"]["counts"] == {"total": 3, "failures": 1}
+    assert record["s2b_tokens"] < record["raw_tokens"]
+
+
+def test_process_event_logs_vitest_event(tmp_path):
+    data_path = tmp_path / "events.jsonl"
+    output = (FIXTURES_DIR / "vitest_output" / "with_failures.txt").read_text()
+    payload = {
+        "tool_name": "Bash",
+        "tool_input": {"command": "npx vitest run src/"},
+        "tool_response": {"stdout": output},
+    }
+    process_event(payload, data_path)
+    record = json.loads(data_path.read_text().splitlines()[0])
+    assert record["command_type"] == "vitest"
+    assert record["s2b_metadata"]["counts"]["failed"] == 2
+
+
+def test_process_event_npm_test_picks_runner_from_output(tmp_path):
+    data_path = tmp_path / "events.jsonl"
+    vitest_output = (FIXTURES_DIR / "vitest_output" / "with_failures.txt").read_text()
+    jest_output = (FIXTURES_DIR / "jest_output" / "with_failures.txt").read_text()
+    for output in (vitest_output, jest_output):
+        process_event(
+            {
+                "tool_name": "Bash",
+                "tool_input": {"command": "npm test"},
+                "tool_response": {"stdout": output},
+            },
+            data_path,
+        )
+    records = [json.loads(line) for line in data_path.read_text().splitlines()]
+    assert [r["command_type"] for r in records] == ["node_test", "node_test"]
+    assert [r["s2b_metadata"]["runner"] for r in records] == ["vitest", "jest"]
+    assert all(r["s2b_metadata"]["parsed"] for r in records)
+
+
+def test_process_event_npm_test_with_unknown_runner(tmp_path):
+    data_path = tmp_path / "events.jsonl"
+    payload = {
+        "tool_name": "Bash",
+        "tool_input": {"command": "npm test"},
+        "tool_response": {"stdout": "1..2\nok 1 - soma\nok 2 - texto\n"},
+    }
+    process_event(payload, data_path)
+    record = json.loads(data_path.read_text().splitlines()[0])
+    assert record["s2b_metadata"]["parsed"] is False
