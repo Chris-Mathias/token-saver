@@ -2,7 +2,7 @@ import io
 import json
 from pathlib import Path
 
-from hooks.post_tool_use import main, process_event
+from hooks.post_tool_use import main, process_event, resolve_data_path
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
@@ -253,3 +253,16 @@ def test_process_event_npm_test_with_unknown_runner(tmp_path):
     process_event(payload, data_path)
     record = json.loads(data_path.read_text().splitlines()[0])
     assert record["s2b_metadata"]["parsed"] is False
+
+
+def test_resolve_data_path_defaults_to_project_data_dir(monkeypatch):
+    monkeypatch.delenv("TOKEN_SAVER_DATA_PATH", raising=False)
+    path = resolve_data_path()
+    assert path.name == "events.jsonl"
+    assert path.parent.name == "data"
+
+
+def test_resolve_data_path_honours_env_var(monkeypatch, tmp_path):
+    target = tmp_path / "coleta" / "site-iecb.jsonl"
+    monkeypatch.setenv("TOKEN_SAVER_DATA_PATH", str(target))
+    assert resolve_data_path() == target

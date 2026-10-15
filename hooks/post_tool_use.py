@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -18,6 +19,13 @@ from token_saver.truncate import paired_truncate
 
 DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "events.jsonl"
 _EXIT_CODE_RE = re.compile(r"^Exit code (\d+)\n?")
+
+
+def resolve_data_path() -> Path:
+    # Each collection target writes to its own file, so a coleta's dataset
+    # never mixes with events from developing the prototype itself.
+    configured = os.environ.get("TOKEN_SAVER_DATA_PATH")
+    return Path(configured) if configured else DATA_PATH
 
 
 def _extract_output_text(tool_response) -> str:
@@ -140,7 +148,7 @@ def main() -> int:
         return 0
 
     try:
-        process_event(payload, DATA_PATH)
+        process_event(payload, resolve_data_path())
     except Exception:
         pass
 
