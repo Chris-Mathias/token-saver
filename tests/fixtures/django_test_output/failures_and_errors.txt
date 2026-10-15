@@ -1,0 +1,27 @@
+Creating test database for alias 'default'...
+F..E.
+======================================================================
+ERROR: test_divide (shop.tests_error.BrokenTests.test_divide)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/user/project/shop/tests_error.py", line 6, in test_divide
+    self.assertEqual(1 / 0, 1)
+                     ~~^~~
+ZeroDivisionError: division by zero
+
+======================================================================
+FAIL: test_aplica_desconto (shop.tests.CartTests.test_aplica_desconto)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/user/project/shop/tests.py", line 13, in test_aplica_desconto
+    self.assertEqual(total([{"price": 10}]), 9)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 10 != 9
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.001s
+
+FAILED (failures=1, errors=1)
+Destroying test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
