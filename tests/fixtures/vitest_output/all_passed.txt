@@ -1,0 +1,9 @@
+
+ RUN  v4.1.12 /home/user/project
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  13:25:09
+   Duration  105ms (transform 9ms, setup 0ms, import 17ms, tests 2ms, environment 0ms)
+

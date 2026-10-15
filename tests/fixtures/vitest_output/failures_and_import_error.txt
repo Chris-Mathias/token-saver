@@ -1,0 +1,71 @@
+
+ RUN  v4.1.12 /home/user/project
+
+ ❯ src/broken.test.js (0 test)
+ ❯ src/cart.test.js (3 tests | 2 failed) 7ms
+     × aplica desconto 4ms
+     × retorna objeto 2ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/broken.test.js [ src/broken.test.js ]
+Error: Cannot find module './does-not-exist.js' imported from /home/user/project/src/broken.test.js
+ ❯ src/broken.test.js:2:1
+      1| import { test, expect } from 'vitest';
+      2| import missing from './does-not-exist.js';
+       | ^
+      3| test('nunca roda', () => { expect(missing).toBeDefined(); });
+      4|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/cart.test.js > cart > aplica desconto
+AssertionError: expected 10 to be 9 // Object.is equality
+
+- Expected
++ Received
+
+- 9
++ 10
+
+ ❯ src/cart.test.js:5:66
+      3| describe('cart', () => {
+      4|   test('soma precos', () => { expect(total([{ price: 2 }, { price: 3 }…
+      5|   test('aplica desconto', () => { expect(total([{ price: 10 }])).toBe(…
+       |                                                                  ^
+      6|   test('retorna objeto', () => { expect({ items: 1, total: 10 }).toEqu…
+      7| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/cart.test.js > cart > retorna objeto
+AssertionError: expected { items: 1, total: 10 } to deeply equal { items: 1, total: 12 }
+
+- Expected
++ Received
+
+  {
+    "items": 1,
+-   "total": 12,
++   "total": 10,
+  }
+
+ ❯ src/cart.test.js:6:66
+      4|   test('soma precos', () => { expect(total([{ price: 2 }, { price: 3 }…
+      5|   test('aplica desconto', () => { expect(total([{ price: 10 }])).toBe(…
+      6|   test('retorna objeto', () => { expect({ items: 1, total: 10 }).toEqu…
+       |                                                                  ^
+      7| });
+      8|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  2 failed | 3 passed (5)
+   Start at  13:25:10
+   Duration  121ms (transform 31ms, setup 0ms, import 37ms, tests 9ms, environment 0ms)
+
