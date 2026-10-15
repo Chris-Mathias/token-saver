@@ -19,6 +19,13 @@ class EventRecord:
     extractor_error: str | None = None
     approx_fallback: bool = False
     exit_code: int | None = None
+    # Identify where this call sits in the real session, so the decision the
+    # agent took after seeing the raw output can be recovered from the
+    # transcript when the counterfactual replay is built.
+    session_id: str | None = None
+    transcript_path: str | None = None
+    cwd: str | None = None
+    tool_use_id: str | None = None
 
 
 def log_event(event: EventRecord, path: Path) -> None:

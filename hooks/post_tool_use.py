@@ -105,6 +105,10 @@ def process_event(payload: dict, data_path: Path) -> None:
         extractor_error=extractor_error,
         approx_fallback=approx_fallback,
         exit_code=exit_code,
+        session_id=payload.get("session_id"),
+        transcript_path=payload.get("transcript_path"),
+        cwd=payload.get("cwd"),
+        tool_use_id=payload.get("tool_use_id"),
     )
     log_event(event, data_path)
 

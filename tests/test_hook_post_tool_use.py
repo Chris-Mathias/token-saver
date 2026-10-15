@@ -159,3 +159,36 @@ def test_process_event_logs_jest_event(tmp_path):
     assert record["command_type"] == "jest"
     assert record["s2b_metadata"]["counts"] == {"failed": 2, "passed": 1, "total": 3}
     assert record["s2b_tokens"] < record["raw_tokens"]
+
+
+def test_process_event_records_session_context_for_later_linking(tmp_path):
+    data_path = tmp_path / "events.jsonl"
+    payload = {
+        "hook_event_name": "PostToolUse",
+        "session_id": "abc123",
+        "transcript_path": "/home/user/.claude/projects/-x/abc123.jsonl",
+        "cwd": "/home/user/project/sub",
+        "tool_use_id": "toolu_01ABC",
+        "tool_name": "Bash",
+        "tool_input": {"command": "pytest"},
+        "tool_response": {"stdout": "===== 2 passed in 0.01s ====="},
+    }
+    process_event(payload, data_path)
+    record = json.loads(data_path.read_text().splitlines()[0])
+    assert record["session_id"] == "abc123"
+    assert record["transcript_path"] == "/home/user/.claude/projects/-x/abc123.jsonl"
+    assert record["cwd"] == "/home/user/project/sub"
+    assert record["tool_use_id"] == "toolu_01ABC"
+
+
+def test_process_event_without_session_context_keeps_fields_empty(tmp_path):
+    data_path = tmp_path / "events.jsonl"
+    payload = {
+        "tool_name": "Bash",
+        "tool_input": {"command": "pytest"},
+        "tool_response": {"stdout": "===== 2 passed in 0.01s ====="},
+    }
+    process_event(payload, data_path)
+    record = json.loads(data_path.read_text().splitlines()[0])
+    assert record["session_id"] is None
+    assert record["tool_use_id"] is None
