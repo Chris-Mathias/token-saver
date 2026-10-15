@@ -1,6 +1,6 @@
 import pytest
 
-from token_saver.classifier import CommandType, classify_command
+from token_saver.classifier import CommandType, classify_command, describe_command_shape
 
 
 @pytest.mark.parametrize(
@@ -45,3 +45,19 @@ from token_saver.classifier import CommandType, classify_command
 )
 def test_classify_command(command, expected):
     assert classify_command(command) == expected
+
+
+@pytest.mark.parametrize(
+    "command,expected",
+    [
+        ("npx vitest run", {"command_segments": 1, "has_heredoc": False, "truncating_pipe": False}),
+        ("npx vitest run 2>&1 | tail -50", {"command_segments": 1, "has_heredoc": False, "truncating_pipe": True}),
+        ("cd app && npm test", {"command_segments": 2, "has_heredoc": False, "truncating_pipe": False}),
+        ("git stash\nnpx jest", {"command_segments": 2, "has_heredoc": False, "truncating_pipe": False}),
+        ("python3 - <<'EOF'\nprint(1)\nEOF\npython manage.py test", {"command_segments": 2, "has_heredoc": True, "truncating_pipe": False}),
+        ("npm test | grep -c PASS", {"command_segments": 1, "has_heredoc": False, "truncating_pipe": True}),
+        ("npm test | cat", {"command_segments": 1, "has_heredoc": False, "truncating_pipe": False}),
+    ],
+)
+def test_describe_command_shape(command, expected):
+    assert describe_command_shape(command) == expected

@@ -26,6 +26,9 @@ class EventRecord:
     transcript_path: str | None = None
     cwd: str | None = None
     tool_use_id: str | None = None
+    command_segments: int = 1
+    has_heredoc: bool = False
+    truncating_pipe: bool = False
 
 
 def log_event(event: EventRecord, path: Path) -> None:

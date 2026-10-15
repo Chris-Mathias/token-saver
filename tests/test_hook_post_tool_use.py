@@ -266,3 +266,17 @@ def test_resolve_data_path_honours_env_var(monkeypatch, tmp_path):
     target = tmp_path / "coleta" / "site-iecb.jsonl"
     monkeypatch.setenv("TOKEN_SAVER_DATA_PATH", str(target))
     assert resolve_data_path() == target
+
+
+def test_process_event_records_command_shape(tmp_path):
+    data_path = tmp_path / "events.jsonl"
+    payload = {
+        "tool_name": "Bash",
+        "tool_input": {"command": "python3 - <<'EOF'\nprint(1)\nEOF\ncd app && npm test 2>&1 | tail -20"},
+        "tool_response": {"stdout": "Tests  2 passed (2)"},
+    }
+    process_event(payload, data_path)
+    record = json.loads(data_path.read_text().splitlines()[0])
+    assert record["command_segments"] == 3
+    assert record["has_heredoc"] is True
+    assert record["truncating_pipe"] is True

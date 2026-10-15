@@ -6,7 +6,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from token_saver.classifier import CommandType, classify_command
+from token_saver.classifier import CommandType, classify_command, describe_command_shape
 from token_saver.extractors import ExtractionResult
 from token_saver.extractors.django_test_extractor import extract_django_test
 from token_saver.extractors.git_diff_extractor import extract_git_diff
@@ -137,6 +137,7 @@ def process_event(payload: dict, data_path: Path) -> None:
         transcript_path=payload.get("transcript_path"),
         cwd=payload.get("cwd"),
         tool_use_id=payload.get("tool_use_id"),
+        **describe_command_shape(command),
     )
     log_event(event, data_path)
 
