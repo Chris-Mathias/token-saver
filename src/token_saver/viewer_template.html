@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Saver — eventos</title>
+<style>
+:root {
+  --bg: #f6f5f1; --surface: #ffffff; --surface-2: #efede7; --border: #dedad0;
+  --text: #1d1c19; --muted: #6b675d; --accent: #2f5d8a;
+  --raw: #c9c3b4; --s2b: #2f5d8a; --s2a: #b0662c;
+  --ok: #2e7d4f; --ok-bg: #e2f1e7; --bad: #b3372b; --bad-bg: #f8e3e0;
+  --warn: #8a6a12; --warn-bg: #f5ecd0;
+  --mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151514; --surface: #1d1d1b; --surface-2: #262623; --border: #34332f;
+    --text: #ecebe6; --muted: #9c988d; --accent: #7fb0e0;
+    --raw: #4a4842; --s2b: #6fa3d8; --s2a: #d99155;
+    --ok: #6fcf97; --ok-bg: #1d3326; --bad: #f08a7e; --bad-bg: #3a1f1c;
+    --warn: #e2c26a; --warn-bg: #352d16;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151514; --surface: #1d1d1b; --surface-2: #262623; --border: #34332f;
+  --text: #ecebe6; --muted: #9c988d; --accent: #7fb0e0;
+  --raw: #4a4842; --s2b: #6fa3d8; --s2a: #d99155;
+  --ok: #6fcf97; --ok-bg: #1d3326; --bad: #f08a7e; --bad-bg: #3a1f1c;
+  --warn: #e2c26a; --warn-bg: #352d16;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 var(--sans); }
+main { max-width: 1280px; margin: 0 auto; padding: 28px 16px 64px; }
+header { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: 15px; margin: 0 0 4px; }
+.sub { color: var(--muted); font-size: 13px; }
+section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
+.section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.kpi .label { color: var(--muted); font-size: 12px; }
+.kpi .value { font-size: 28px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.kpi .detail { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.kpi.good .value { color: var(--ok); } .kpi.bad .value { color: var(--bad); }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.bars { display: grid; grid-template-columns: minmax(130px, 200px) 1fr 150px; gap: 8px 14px; align-items: center; }
+.bars .name { font-size: 13px; }
+.bars .name small { color: var(--muted); }
+.bars .sep { grid-column: 1 / -1; border-top: 1px dashed var(--border); margin: 4px 0; }
+.track { position: relative; height: 18px; }
+.track .raw, .track .s2b { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; }
+.track .raw { background: var(--raw); } .track .s2b { background: var(--s2b); }
+.bars .num { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.bars .num b { color: var(--text); }
+.fid-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+.fid-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--surface); }
+.fid-card:hover { border-color: var(--accent); }
+.fid-card .cmd { font: 12px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 8px; }
+.fid-row { display: grid; grid-template-columns: 36px 1fr; gap: 6px; align-items: start; margin-top: 4px; }
+.fid-row .tag { font-size: 11px; font-weight: 600; padding-top: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font: 11px var(--mono); padding: 1px 6px; border-radius: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip.kept { background: var(--ok-bg); color: var(--ok); }
+.chip.lost { background: var(--bad-bg); color: var(--bad); text-decoration: line-through; }
+.filters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.filters button, .filters select, .tabs button, .theme-toggle {
+  font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); cursor: pointer;
+}
+.filters button[aria-pressed="true"], .tabs button[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--surface-2); }
+tbody tr.selected { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.cmd { font: 12px var(--mono); max-width: 420px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+.badge.ok { background: var(--ok-bg); color: var(--ok); }
+.badge.bad { background: var(--bad-bg); color: var(--bad); }
+.badge.warn { background: var(--warn-bg); color: var(--warn); }
+.badge.neutral { background: var(--surface-2); color: var(--muted); }
+.mini { width: 90px; height: 8px; background: var(--raw); border-radius: 2px; position: relative; }
+.mini span { position: absolute; left: 0; top: 0; bottom: 0; background: var(--s2b); border-radius: 2px; }
+#detail { scroll-margin-top: 16px; }
+.detail-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+.detail-cmd { font: 12px var(--mono); background: var(--surface-2); padding: 8px 10px; border-radius: 6px; white-space: pre-wrap; word-break: break-word; max-height: 120px; overflow: auto; margin-bottom: 12px; }
+.tabs { display: none; gap: 6px; margin-bottom: 10px; }
+.panes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.pane { border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; min-width: 0; }
+.pane-head { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 10px; border-bottom: 1px solid var(--border); background: var(--surface-2); border-radius: 8px 8px 0 0; }
+.pane-head b { font-size: 13px; }
+.pane-head span { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pane pre { margin: 0; padding: 10px; font: 11.5px/1.45 var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 560px; overflow: auto; }
+mark { background: var(--warn-bg); color: var(--warn); border-radius: 2px; padding: 0 1px; }
+.empty { color: var(--muted); font-style: italic; }
+.note { color: var(--muted); font-size: 12px; margin-top: 10px; }
+@media (max-width: 860px) {
+  .bars { grid-template-columns: 1fr; gap: 2px; }
+  .bars .num { text-align: left; margin-bottom: 8px; }
+  .tabs { display: flex; }
+  .panes { grid-template-columns: 1fr; }
+  .pane:not(.active) { display: none; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Token Saver — eventos de uma sessão</h1>
+      <div class="sub" id="source"></div>
+    </div>
+    <button class="theme-toggle" id="theme" type="button">Tema</button>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Economia de tokens por recorte</h2>
+        <div class="sub">Tamanho bruto vs. tamanho depois do extrator (S2b). S2a tem sempre o mesmo orçamento de S2b.</div>
+      </div>
+      <div class="legend"><span><i style="background:var(--raw)"></i>Bruto</span><span><i style="background:var(--s2b)"></i>S2b</span></div>
+    </div>
+    <div class="bars" id="bars"></div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Proxy de fidelidade: os identificadores de falha sobrevivem?</h2>
+        <div class="sub">Falhas interpretadas pelo extrator. Verde = o nome do teste/arquivo aparece na versão; riscado = sumiu. Clique para abrir o evento.</div>
+      </div>
+    </div>
+    <div class="fid-grid" id="fid"></div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Eventos</h2>
+        <div class="sub" id="count"></div>
+      </div>
+      <div class="filters" id="filters">
+        <button type="button" data-f="all" aria-pressed="true">Todos</button>
+        <button type="button" data-f="failed" aria-pressed="false">Com falha</button>
+        <button type="button" data-f="unparsed" aria-pressed="false">Não interpretados</button>
+        <button type="button" data-f="lost" aria-pressed="false">S2a perdeu falha</button>
+        <select id="type-filter" aria-label="Tipo de comando"><option value="">Todos os tipos</option></select>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Hora</th><th>Tipo</th><th>Status</th><th>Comando</th><th style="text-align:right">Bruto</th><th style="text-align:right">S2b</th><th style="text-align:right">Redução</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="detail">
+    <div class="empty">Selecione um evento na tabela para ver S2a, S2b e a saída bruta lado a lado.</div>
+  </section>
+</main>
+
+<script id="summary" type="application/json">__SUMMARY__</script>
+<script id="data" type="application/json">__EVENTS__</script>
+<script>
+const SUMMARY = JSON.parse(document.getElementById("summary").textContent);
+const EVENTS = JSON.parse(document.getElementById("data").textContent);
+EVENTS.forEach((e, i) => { e.idx = i; e.s2aLost = e.markers.some(m => !m.s2a); });
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pct = (a, b) => b ? Math.round(a / b * 100) + "%" : "—";
+const red = (raw, s2b) => raw ? Math.round((1 - s2b / raw) * 100) + "%" : "—";
+const fmt = n => n.toLocaleString("pt-BR");
+
+(function theme() {
+  const root = document.documentElement;
+  try { const t = localStorage.getItem("ts-theme"); if (t) root.dataset.theme = t; } catch (_) {}
+  $("theme").addEventListener("click", () => {
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("ts-theme", root.dataset.theme); } catch (_) {}
+  });
+})();
+
+const slice = label => SUMMARY.slices.find(s => s.label === label);
+const F = SUMMARY.fidelity;
+$("source").textContent = `${SUMMARY.source} · ${EVENTS.length} eventos · ${new Set(EVENTS.map(e => e.timestamp.slice(0, 10))).size} dia(s)`;
+
+const total = slice("Total"), parsed = slice("Interpretadas");
+$("kpis").innerHTML = [
+  { label: "Redução total (S2b vs. bruto)", value: red(total.raw, total.s2b), detail: `${fmt(total.raw)} → ${fmt(total.s2b)} tokens` },
+  { label: "Redução onde o extrator interpretou", value: red(parsed.raw, parsed.s2b), detail: `${parsed.events} de ${total.events} eventos` },
+  { label: "Falhas preservadas em S2a (truncamento)", value: pct(F.kept_s2a, F.markers), detail: `${F.kept_s2a}/${F.markers} identificadores · perda em ${F.events_s2a_lost}/${F.events} eventos`, cls: "bad" },
+  { label: "Falhas preservadas em S2b (extrator)", value: pct(F.kept_s2b, F.markers), detail: `${F.kept_s2b}/${F.markers} identificadores · perda em ${F.events_s2b_lost}/${F.events} eventos`, cls: "good" },
+].map(k => `<div class="kpi ${k.cls || ""}"><div class="label">${k.label}</div><div class="value">${k.value}</div><div class="detail">${k.detail}</div></div>`).join("");
+
+(function bars() {
+  const max = Math.max(...SUMMARY.slices.map(s => s.raw));
+  const html = [];
+  SUMMARY.slices.forEach((s, i) => {
+    if (i === 5) html.push('<div class="sep"></div>');
+    html.push(`<div class="name">${esc(s.label)} <small>· ${s.events}</small></div>
+      <div class="track" title="${fmt(s.raw)} → ${fmt(s.s2b)} tokens"><div class="raw" style="width:${s.raw / max * 100}%"></div><div class="s2b" style="width:${s.s2b / max * 100}%"></div></div>
+      <div class="num">${fmt(s.raw)} → ${fmt(s.s2b)} · <b>${red(s.raw, s.s2b)}</b></div>`);
+  });
+  $("bars").innerHTML = html.join("");
+})();
+
+(function fid() {
+  const cards = EVENTS.filter(e => e.failed && e.parsed && e.markers.length);
+  const chips = (e, k) => e.markers.map(m => `<span class="chip ${m[k] ? "kept" : "lost"}" title="${esc(m.name)}">${esc(m.name)}</span>`).join("");
+  $("fid").innerHTML = cards.length ? cards.map(e => `
+    <div class="fid-card" data-idx="${e.idx}">
+      <div class="cmd" title="${esc(e.command)}">#${e.idx + 1} · ${esc(e.command_type)} · ${esc(e.command.split("\n")[0])}</div>
+      <div class="fid-row"><span class="tag" style="color:var(--s2a)">S2a</span><div class="chips">${chips(e, "s2a")}</div></div>
+      <div class="fid-row"><span class="tag" style="color:var(--s2b)">S2b</span><div class="chips">${chips(e, "s2b")}</div></div>
+    </div>`).join("") : '<div class="empty">Nenhuma falha interpretada neste arquivo.</div>';
+  $("fid").addEventListener("click", ev => { const c = ev.target.closest(".fid-card"); if (c) select(+c.dataset.idx, true); });
+})();
+
+let filter = "all", typeFilter = "", selected = null;
+[...new Set(EVENTS.map(e => e.command_type))].sort().forEach(t => $("type-filter").insertAdjacentHTML("beforeend", `<option>${esc(t)}</option>`));
+
+function status(e) {
+  if (!e.parsed) return '<span class="badge warn">não interpretado</span>';
+  return e.failed ? '<span class="badge bad">falha</span>' : '<span class="badge ok">ok</span>';
+}
+
+function renderRows() {
+  const list = EVENTS.filter(e =>
+    (filter === "all" || (filter === "failed" && e.failed) || (filter === "unparsed" && !e.parsed) || (filter === "lost" && e.s2aLost)) &&
+    (!typeFilter || e.command_type === typeFilter));
+  $("count").textContent = `${list.length} de ${EVENTS.length} eventos`;
+  $("rows").innerHTML = list.map(e => `
+    <tr data-idx="${e.idx}" class="${e.idx === selected ? "selected" : ""}">
+      <td class="num">${e.idx + 1}</td>
+      <td class="num">${esc(e.timestamp.slice(11, 19))}</td>
+      <td>${esc(e.command_type)}</td>
+      <td>${status(e)}${e.s2aLost ? ' <span class="badge bad" title="S2a perdeu identificador de falha">S2a −' + e.markers.filter(m => !m.s2a).length + "</span>" : ""}</td>
+      <td class="cmd" title="${esc(e.command)}">${esc(e.command.split("\n")[0])}</td>
+      <td class="num">${fmt(e.raw_tokens)}</td>
+      <td class="num">${fmt(e.s2b_tokens)}</td>
+      <td class="num">${red(e.raw_tokens, e.s2b_tokens)}</td>
+      <td><div class="mini"><span style="width:${e.raw_tokens ? e.s2b_tokens / e.raw_tokens * 100 : 0}%"></span></div></td>
+    </tr>`).join("") || '<tr><td colspan="9" class="empty">Nenhum evento com esses filtros.</td></tr>';
+}
+
+$("filters").addEventListener("click", ev => {
+  const b = ev.target.closest("button[data-f]"); if (!b) return;
+  filter = b.dataset.f;
+  $("filters").querySelectorAll("button[data-f]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  renderRows();
+});
+$("type-filter").addEventListener("change", ev => { typeFilter = ev.target.value; renderRows(); });
+$("rows").addEventListener("click", ev => { const tr = ev.target.closest("tr[data-idx]"); if (tr) select(+tr.dataset.idx, true); });
+
+function highlight(text, markers) {
+  let html = esc(text);
+  markers.map(m => esc(m.name)).sort((a, b) => b.length - a.length).forEach(name => {
+    html = html.split(name).join(`<mark>${name}</mark>`);
+  });
+  return html;
+}
+
+function select(idx, scroll) {
+  selected = idx;
+  const e = EVENTS[idx];
+  const panes = [
+    { key: "s2a", title: "S2a · truncamento", tokens: e.s2a_tokens, text: e.s2a_output },
+    { key: "s2b", title: "S2b · extrator", tokens: e.s2b_tokens, text: e.s2b_output },
+    { key: "raw", title: "Bruto", tokens: e.raw_tokens, text: e.raw_output },
+  ];
+  const flags = [
+    status(e),
+    `<span class="badge neutral">${esc(e.command_type)}</span>`,
+    `<span class="badge neutral">exit ${e.exit_code ?? "?"}</span>`,
+    e.command_segments > 1 ? `<span class="badge neutral">comando composto (${e.command_segments})</span>` : "",
+    e.truncating_pipe ? '<span class="badge warn">pipe que trunca</span>' : "",
+    /\[\d+ characters truncated\]/.test(e.raw_output) ? '<span class="badge warn">bruto já truncado pelo Claude Code</span>' : "",
+    e.extractor_error ? `<span class="badge bad">erro: ${esc(e.extractor_error)}</span>` : "",
+  ].join(" ");
+  const markers = e.markers.length
+    ? `<div class="note">Identificadores de falha (destacados): ${e.markers.map(m => `<code>${esc(m.name)}</code> S2a ${m.s2a ? "✓" : "✗"} · S2b ${m.s2b ? "✓" : "✗"}`).join(" &nbsp;|&nbsp; ")}</div>` : "";
+  $("detail").innerHTML = `
+    <div class="section-head"><div><h2>Evento #${idx + 1}</h2><div class="sub">${esc(e.timestamp)}</div></div></div>
+    <div class="detail-meta">${flags}</div>
+    <div class="detail-cmd">${esc(e.command)}</div>
+    <div class="tabs">${panes.map((p, i) => `<button type="button" data-pane="${p.key}" aria-pressed="${i === 0}">${p.title.split(" ·")[0]}</button>`).join("")}</div>
+    <div class="panes">${panes.map((p, i) => `
+      <div class="pane ${i === 0 ? "active" : ""}" data-pane="${p.key}">
+        <div class="pane-head"><b>${p.title}</b><span>${fmt(p.tokens)} tokens</span></div>
+        <pre>${p.text ? highlight(p.text, e.markers) : '<span class="empty">(vazio)</span>'}</pre>
+      </div>`).join("")}</div>
+    ${markers}
+    <div class="note">Metadados do extrator: <code>${esc(JSON.stringify(e.metadata))}</code></div>`;
+  $("detail").querySelector(".tabs").addEventListener("click", ev => {
+    const b = ev.target.closest("button[data-pane]"); if (!b) return;
+    $("detail").querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    $("detail").querySelectorAll(".pane").forEach(p => p.classList.toggle("active", p.dataset.pane === b.dataset.pane));
+  });
+  renderRows();
+  if (scroll) $("detail").scrollIntoView({ behavior: "smooth" });
+}
+
+renderRows();
+</script>
+</body>
+</html>
