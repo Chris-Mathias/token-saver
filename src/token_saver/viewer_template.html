@@ -90,6 +90,8 @@ td:has(> .dots) { white-space: nowrap; }
 .badge.bad { background: var(--bad-bg); color: var(--bad); }
 .badge.warn { background: var(--warn-bg); color: var(--warn); }
 .table-wrap { overflow-x: auto; }
+.mini { width: 120px; height: 10px; background: var(--orig); border-radius: 3px; position: relative; }
+.mini span { position: absolute; inset: 0 auto 0 0; background: var(--ext); border-radius: 3px; }
 
 .picker { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
 .picker select { font: inherit; font-size: 14px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); max-width: 100%; }
@@ -123,15 +125,14 @@ details pre { margin: 8px 0 0; padding: 12px 14px; font: 12px/1.5 var(--mono); w
     <div>
       <div class="eyebrow" id="source"></div>
       <h1>O extrator reduz as saídas de teste sem esconder o que falhou</h1>
-      <p class="lead">Cada vez que o Claude Code rodou testes nesta sessão, a saída foi guardada em três versões. A pergunta é: com o mesmo número de tokens, qual versão deixa o agente ver melhor o que deu errado?</p>
     </div>
     <button class="theme-toggle" id="theme" type="button">Claro/escuro</button>
   </header>
 
   <div class="versions">
-    <div class="version"><b><span class="swatch" style="background:var(--orig)"></span>Original</b><p>A saída completa, como o agente recebe hoje.</p></div>
-    <div class="version"><b><span class="swatch" style="background:var(--ext)"></span>Extrator <small style="color:var(--faint);font-weight:400">(S2b)</small></b><p>Nossa versão: resumo + só os testes que falharam.</p></div>
-    <div class="version"><b><span class="swatch" style="background:var(--trunc)"></span>Truncamento <small style="color:var(--faint);font-weight:400">(S2a)</small></b><p>A original cortada no mesmo tamanho do extrator.</p></div>
+    <div class="version"><b><span class="swatch" style="background:var(--orig)"></span>Original</b><p>Saída completa</p></div>
+    <div class="version"><b><span class="swatch" style="background:var(--ext)"></span>Extrator <small style="color:var(--faint);font-weight:400">(S2b)</small></b><p>Resumo + testes que falharam</p></div>
+    <div class="version"><b><span class="swatch" style="background:var(--trunc)"></span>Truncamento <small style="color:var(--faint);font-weight:400">(S2a)</small></b><p>Original cortada no tamanho do extrator</p></div>
   </div>
 
   <section>
@@ -153,7 +154,6 @@ details pre { margin: 8px 0 0; padding: 12px 14px; font: 12px/1.5 var(--mono); w
   <section>
     <div class="eyebrow">2 · Fidelidade</div>
     <h2>Com o mesmo tamanho, o agente ainda vê quais testes falharam?</h2>
-    <p class="lead" id="fid-lead"></p>
     <div class="card">
       <div class="vs">
         <div class="side">
@@ -173,7 +173,6 @@ details pre { margin: 8px 0 0; padding: 12px 14px; font: 12px/1.5 var(--mono); w
         <thead><tr><th>Execução com falha</th><th class="num">Testes que falharam</th><th>Truncamento mostra</th><th>Extrator mostra</th></tr></thead>
         <tbody id="fid-rows"></tbody>
       </table>
-      <div class="footnote">Clique numa linha para ver as duas versões lado a lado. Indicador indireto e determinístico — a medida de fidelidade da decisão do agente vem da réplica via API.</div>
     </div>
   </section>
 
@@ -189,15 +188,13 @@ details pre { margin: 8px 0 0; padding: 12px 14px; font: 12px/1.5 var(--mono); w
 
   <section>
     <div class="eyebrow">4 · Todas as execuções</div>
-    <details>
-      <summary id="all-summary"></summary>
-      <div class="card table-wrap">
-        <table>
-          <thead><tr><th class="num">#</th><th>O que rodou</th><th>Resultado</th><th class="num">Original</th><th class="num">Extrator</th><th class="num">Economia</th></tr></thead>
-          <tbody id="all-rows"></tbody>
-        </table>
-      </div>
-    </details>
+    <h2 id="all-title"></h2>
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th class="num">#</th><th>O que rodou</th><th>Resultado</th><th class="num">Original</th><th class="num">Extrator</th><th class="num">Economia</th><th></th></tr></thead>
+        <tbody id="all-rows"></tbody>
+      </table>
+    </div>
   </section>
 </main>
 
@@ -249,12 +246,11 @@ const days = new Set(EVENTS.map(e => e.timestamp.slice(0, 10))).size;
 $("source").textContent = `${SUMMARY.source.replace(/\.jsonl$/, "")} · ${EVENTS.length} execuções · ${days} dia${days > 1 ? "s" : ""}`;
 
 $("hero-saving").innerHTML = `${saving(parsed.raw, parsed.s2b)}%<small> menos</small>`;
-$("hero-saving-text").innerHTML = `Nas <strong>${parsed.events} de ${total.events}</strong> execuções que o extrator reconheceu, ${fmt(parsed.raw)} tokens viraram <strong>${fmt(parsed.s2b)}</strong>. Contando também as que ele não reconheceu (repassadas inteiras), a economia total é de ${saving(total.raw, total.s2b)}%.`;
+$("hero-saving-text").innerHTML = `<strong>${fmt(parsed.raw)} → ${fmt(parsed.s2b)}</strong> tokens nas ${parsed.events} execuções que o extrator reconheceu.`;
 
 const groups = [
-  { label: "Testes passaram", slice: sl("Interpretadas, sucesso"), note: "Quase tudo é ruído: basta dizer “N testes, todos ok”." },
-  { label: "Testes falharam", slice: sl("Interpretadas, falha"), note: "Mantém o resumo e o traceback de cada teste que falhou." },
-  { label: "Saída não reconhecida", slice: sl("Não interpretadas"), note: "O extrator não entendeu o formato e repassou a saída inteira — é o próximo ponto a melhorar." },
+  { label: "Testes passaram", slice: sl("Interpretadas, sucesso") },
+  { label: "Testes falharam", slice: sl("Interpretadas, falha") },
 ];
 const maxRaw = Math.max(...groups.map(g => g.slice.raw));
 $("bars").innerHTML = groups.map(g => {
@@ -262,16 +258,14 @@ $("bars").innerHTML = groups.map(g => {
   return `<div class="bar-row">
     <div class="bar-label"><b>${g.label} <span>· ${s.events} execuções</span></b><span>${fmt(s.raw)} → ${fmt(s.s2b)} tokens · <strong>${saving(s.raw, s.s2b)}% menos</strong></span></div>
     <div class="track" style="width:${s.raw / maxRaw * 100}%" title="Original ${fmt(s.raw)} · Extrator ${fmt(s.s2b)} tokens"><div class="fill" style="width:${s.raw ? s.s2b / s.raw * 100 : 0}%"></div></div>
-    <div class="bar-note">${g.note}</div>
   </div>`;
 }).join("");
 
 const F = SUMMARY.fidelity;
-$("fid-lead").textContent = `Em ${F.events} execuções com falha, contamos se o nome de cada teste que falhou (${F.markers} no total) ainda aparece em cada versão. As duas versões têm o mesmo número de tokens.`;
 $("fid-trunc").innerHTML = `${pct(F.kept_s2a, F.markers)}%`;
-$("fid-trunc-text").innerHTML = `${F.kept_s2a} de ${F.markers} testes visíveis. Em <strong style="color:var(--bad)">${F.events_s2a_lost} de ${F.events}</strong> execuções o agente não vê algum teste que falhou.`;
+$("fid-trunc-text").innerHTML = `${F.kept_s2a} de ${F.markers} testes que falharam visíveis`;
 $("fid-ext").innerHTML = `${pct(F.kept_s2b, F.markers)}%`;
-$("fid-ext-text").innerHTML = `${F.kept_s2b} de ${F.markers} testes visíveis. Perda em ${F.events_s2b_lost} de ${F.events} execuções.`;
+$("fid-ext-text").innerHTML = `${F.kept_s2b} de ${F.markers} testes que falharam visíveis`;
 
 const failing = EVENTS.filter(e => e.failed && e.parsed && e.markers.length);
 const dots = (e, key) => `<span class="dots">${e.markers.map(m => `<i class="${m[key] ? "on" : "off"}" title="${esc(m.name)}"></i>`).join("")}</span>`;
@@ -312,24 +306,19 @@ function show(n, scroll) {
       </div>
       <pre>${text ? highlight(text, e.markers) : "(vazio)"}</pre>
     </div>`;
-  const notes = [];
-  if (!e.parsed) notes.push("O extrator não reconheceu este formato, então as três versões são praticamente a original.");
-  if (e.preTruncated) notes.push("A saída original já chegou cortada pelo próprio Claude Code (trecho “characters truncated” no meio) — o tamanho real era maior.");
-  if (e.command_segments > 1) notes.push(`Comando composto (${e.command_segments} partes): a saída mistura mais de um comando.`);
   $("case-body").innerHTML = `
-    <p class="case-summary">${result(e)} &nbsp;<code>${esc(shortCommand(e.command))}</code> · original com ${fmt(e.raw_tokens)} tokens${m ? ` · nomes dos testes que falharam <mark>destacados</mark>` : ""}</p>
+    <p class="case-summary">${result(e)} &nbsp;<code>${esc(shortCommand(e.command))}</code></p>
     <div class="compare">
       ${pane("Truncamento", "--trunc", e.s2a_tokens, e.s2a_output, visible(e.keptTrunc, "lost"))}
       ${pane("Extrator", "--ext", e.s2b_tokens, e.s2b_output, visible(e.keptExt, "lost"))}
     </div>
-    ${notes.map(t => `<div class="callout">${t}</div>`).join("")}
-    <details><summary>Ver a saída original completa (${fmt(e.raw_tokens)} tokens)</summary><pre>${highlight(e.raw_output, e.markers)}</pre></details>`;
+    <details><summary>Saída original (${fmt(e.raw_tokens)} tokens)</summary><pre>${highlight(e.raw_output, e.markers)}</pre></details>`;
   renderFidRows();
   renderAllRows();
   if (scroll) $("case").scrollIntoView({ behavior: "smooth" });
 }
 
-$("all-summary").textContent = `Ver as ${EVENTS.length} execuções da sessão`;
+$("all-title").textContent = `${EVENTS.length} execuções da sessão`;
 function renderAllRows() {
   $("all-rows").innerHTML = EVENTS.map(e => `
     <tr data-n="${e.n}" class="${e.n === current ? "selected" : ""}">
@@ -339,6 +328,7 @@ function renderAllRows() {
       <td class="num">${fmt(e.raw_tokens)}</td>
       <td class="num">${fmt(e.s2b_tokens)}</td>
       <td class="num">${saving(e.raw_tokens, e.s2b_tokens)}%</td>
+      <td><div class="mini" title="Original ${fmt(e.raw_tokens)} · Extrator ${fmt(e.s2b_tokens)}"><span style="width:${e.raw_tokens ? e.s2b_tokens / e.raw_tokens * 100 : 0}%"></span></div></td>
     </tr>`).join("");
 }
 $("all-rows").addEventListener("click", ev => { const tr = ev.target.closest("tr[data-n]"); if (tr) show(+tr.dataset.n, true); });
